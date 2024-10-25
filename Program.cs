@@ -14,6 +14,19 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+
+// cors 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", builder =>
+    {
+        builder.WithOrigins("*") 
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
+
 // Db Context setting
 
 builder.Services.AddDbContext<AppDBContext>(options =>
@@ -29,6 +42,7 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
     options.Password.RequireLowercase = false;
     options.Password.RequireUppercase = false;
 })
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<AppDBContext>()
     .AddDefaultTokenProviders();
 
@@ -54,8 +68,17 @@ builder.Services.AddAuthentication(options =>
     {
         OnAuthenticationFailed = context =>
         {
-            Console.WriteLine($"Authentication failed: {context.Exception.Message}");
-            return Task.CompletedTask;
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+
+            var result = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                error = "Authentication failed",
+                message = context.Exception?.Message
+            });
+
+            // Write the response and flush it
+            return context.Response.WriteAsync(result);
         },
         OnTokenValidated = context =>
         {
@@ -64,10 +87,25 @@ builder.Services.AddAuthentication(options =>
         },
         OnChallenge = context =>
         {
-            Console.WriteLine("Token validation failed: " + context.ErrorDescription);
+            if (!context.Response.HasStarted)
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+
+                var result = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    error = "Authorization failed",
+                    message = context.ErrorDescription ?? "Unauthorized access"
+                });
+
+                // Write the response and flush it
+                return context.Response.WriteAsync(result);
+            }
+
             return Task.CompletedTask;
         }
     };
+
 });
 
 

@@ -13,13 +13,13 @@ namespace Authorization.Controllers
         [HttpGet("restricted")]
         public IActionResult Restricted()
         {
-            // Optionally, use Forbid explicitly in this action
             if (!User.IsInRole("Admin"))
             {
-                return Forbid("Access denied: Admin privileges required.");
+                return BadRequest(new { error = "Access denied", message = "Admin privileges required." });
             }
 
-             var encryptedText = Crypto.Crypto.Encrypt("My name is kirtan");
+
+            var encryptedText = Crypto.Crypto.Encrypt("My name is kirtan");
 
             return Ok(encryptedText);
         }
