@@ -50,35 +50,51 @@ namespace Authorization.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] Login obj)
         {
+            if (string.IsNullOrEmpty(obj.Username) || string.IsNullOrEmpty(obj.Password))
+            {
+                return BadRequest("Username and password cannot be empty.");
+            }
+
             try
             {
-               var user = await _userManager.FindByNameAsync(obj.Username);
+                var user = await _userManager.FindByNameAsync(obj.Username);
 
-                if(user != null && await _userManager.CheckPasswordAsync(user,obj.Password))
+                if (user == null)
                 {
-                    var userRole = await _userManager.GetRolesAsync(user);
-                    var authClaims = new List<Claim>
-                    {
-                        new Claim(JwtRegisteredClaimNames.Sub,user.UserName!),
-                        new Claim(JwtRegisteredClaimNames.Sub,Guid.NewGuid().ToString())
-                    };
+                    return Unauthorized("Invalid username or password.");
+                }
 
-                    authClaims.AddRange(userRole.Select(role => new Claim(ClaimTypes.Role, role)));
+                if (!await _userManager.CheckPasswordAsync(user, obj.Password))
+                {
+                    return Unauthorized("Invalid username or password.");
+                }
 
-                    var token = new JwtSecurityToken(issuer: _configuration["Jwt:Issuer"],
-                        expires: DateTime.Now.AddMinutes(double.Parse(_configuration["Jwt:ExpireMinutes"]!)),
-                        claims: authClaims,
-                        signingCredentials: new Microsoft.IdentityModel.Tokens.SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!)),
-                        SecurityAlgorithms.HmacSha256
-                        ));
-                         return Ok(new { Token = new JwtSecurityTokenHandler().WriteToken(token) });
-                };
-                return Unauthorized();
+                var userRoles = await _userManager.GetRolesAsync(user);
+                var authClaims = new List<Claim>
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, user.UserName!),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            // Jti for token identifier
+        };
+
+                // Add user roles to claims
+                authClaims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+                var token = new JwtSecurityToken(
+                    issuer: _configuration["Jwt:Issuer"],
+                    audience: _configuration["Jwt:Audience"], // Ensure this matches your token validation
+                    expires: DateTime.Now.AddMinutes(double.Parse(_configuration["Jwt:ExpireMinutes"]!)),
+                    claims: authClaims,
+                    signingCredentials: new SigningCredentials(
+                        new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!)),
+                        SecurityAlgorithms.HmacSha256)
+                );
+
+                return Ok(new { Token = new JwtSecurityTokenHandler().WriteToken(token) });
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
-
+                return BadRequest($"An error occurred: {ex.Message}");
             }
         }
 
@@ -110,7 +126,7 @@ namespace Authorization.Controllers
         }
 
         [HttpPost("assign-role")]
-        public async Task<IActionResult> AssignRole([FromBody] Role obJRole)
+        public async Task<IActionResult> AssignRole([FromBody] RoleModel obJRole)
         {
             try
             {
@@ -120,7 +136,7 @@ namespace Authorization.Controllers
                     return NotFound("User not found");
                 }
 
-                var result = await _userManager.AddToRoleAsync(user, obJRole.RoleName);
+                var result = await _userManager.AddToRoleAsync(user, obJRole.Role);
                 if (result.Succeeded)
                 {
                     return Ok(new { message =" Successfully assign new role to" + user.UserName});
