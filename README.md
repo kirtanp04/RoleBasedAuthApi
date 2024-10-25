@@ -1,14 +1,16 @@
-# Role-Based Authorization API in .NET Core
+﻿# Role-Based Authorization API in .NET Core
 
-This project demonstrates a **Role-Based Authorization** system using **.NET Core Web API**. It manages user authentication and access control by defining Admin and User role and restricting access to certain API endpoints based on these roles.
+This project demonstrates a **Role-Based Authorization** system using **.NET Core Web API**. It manages user authentication and access control by defining Admin and User roles and restricting access to certain API endpoints based on these roles. It also includes encryption and decryption for sensitive data handling.
 
-## Features
+## ✨ Features
 
-- **User Authentication**: Token-based authentication using **JWT** (JSON Web Tokens).
-- **Role-Based Access Control**: Define roles (e.g., Admin and User) to control which users have access to specific API resources.
-- **Secure API Endpoints**: Secure sensitive endpoints to prevent unauthorized access.
+- 🔐 **User Authentication**: Token-based authentication using **JWT** (JSON Web Tokens).
+- 🛡️ **Role-Based Access Control**: Define roles (e.g., Admin and User) to control access to specific API resources.
+- 🔒 **Encryption/Decryption**: Ensures sensitive data is encrypted during storage and transmission using AES (Advanced Encryption Standard).
+- 🔍 **Secure API Endpoints**: Prevent unauthorized access by securing endpoints.
+- 📄 **API Documentation**: Comprehensive documentation with **Swagger**.
 
-## Technologies Used
+## 🔧 Technologies Used
 
 - **ASP.NET Core 6.0**
 - **Entity Framework Core** for database interaction
@@ -16,7 +18,7 @@ This project demonstrates a **Role-Based Authorization** system using **.NET Cor
 - **SQL Server** for the database
 - **Swagger** for API documentation
 
-## Installation
+## 🚀 Installation
 
 Follow these steps to set up the project locally:
 
